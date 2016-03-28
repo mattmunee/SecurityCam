@@ -22,12 +22,9 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=4
-FILE_NAME_0=2911;Python;0;16;1;1;0;%2Fmnt%2FSeagateTB%2FCode%2FPiCamSecurity%2FFlaskStream%2Fapp.py;0;4
-FILE_NAME_1=0;Python;0;16;1;1;0;%2Fmnt%2FSeagateTB%2FCode%2FPiCamSecurity%2FFlaskStream%2Fcamera_pi.py;0;4
-FILE_NAME_2=0;None;0;16;1;1;0;%2Fmnt%2FSeagateTB%2FCode%2FSecurityCam%2FLICENSE;0;4
-FILE_NAME_3=0;Python;0;16;1;1;0;%2Fmnt%2FSeagateTB%2FCode%2FSecurityCam%2Fapp.py;0;4
-FILE_NAME_4=0;Python;0;16;1;1;0;%2Fmnt%2FSeagateTB%2FCode%2FSecurityCam%2Fcamera.py;0;4
+current_page=1
+FILE_NAME_0=0;Python;0;16;1;1;0;%2Fmnt%2FSeagateTB%2FCode%2FSecurityCam%2Fapp.py;0;4
+FILE_NAME_1=253;Python;0;16;1;1;0;%2Fmnt%2FSeagateTB%2FCode%2FSecurityCam%2Fcamera_pi.py;0;4
 
 [VTE]
 last_dir=/root
