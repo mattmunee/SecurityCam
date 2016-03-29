@@ -127,9 +127,9 @@ if __name__=='__main__':
 		#camera.startRecording()
 		
 		print 'About to run'
-		#app.run(host = '0.0.0.0',use_reloader = False, debug = False)
-		server = Process(target=run_server)
-		server.start()
+		app.run(host = '0.0.0.0',use_reloader = False, debug = False)
+		#server = Process(target=run_server)
+		#server.start()
 		
 		while not userInputReceived:
 			time.sleep(1)
@@ -139,7 +139,7 @@ if __name__=='__main__':
 		
 	except KeyboardInterrupt:
 		print 'Received KeyboardInterrupt'
-		camera.stopRecording()
+		#camera.stopRecording()
 		time.sleep(4)
 		killall = True
 		sys.exit()
