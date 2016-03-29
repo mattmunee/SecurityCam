@@ -9,22 +9,18 @@ class Camera(object):
 	streamThread = None  # background thread that reads frames from camera
 	frame = None  # current frame is stored here by background thread
 	last_access = 0  # time of last client access to the camera
-	
 
-	def initialize(self):
+	def get_frame(self):
+		Camera.last_access = time.time()
 		if Camera.streamThread is None:
 			# start background frame thread
 			Camera.streamThread = threading.Thread(target=self._thread)
 			Camera.streamThread.start()
 
 			# wait until frames start to be available
-			while self.frame is None:
+			while Camera.frame is None:
 				time.sleep(0)
-
-	def get_frame(self):
-		Camera.last_access = time.time()
-		self.initialize()
-		return self.frame
+		return Camera.frame
 
 	@classmethod
 	def _thread(cls):
