@@ -49,8 +49,8 @@ def cleanupApp():
 	print "Should be dead"
 	camera.stopRecording()
 	print 'Finished!'
-	server.terminate()
-	server.join()
+	#server.terminate()
+	#server.join()
 	time.sleep(1)
 
 
@@ -124,7 +124,7 @@ if __name__=='__main__':
 		t2.setDaemon(True)
 		t2.start()
 		
-		#camera.startRecording()
+		camera.startRecording()
 		
 		print 'About to run'
 		app.run(host = '0.0.0.0',use_reloader = False, debug = False)
