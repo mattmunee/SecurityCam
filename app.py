@@ -7,7 +7,7 @@ import sys
 
 app = Flask(__name__)
 
-timeOut = 5
+timeOut = 1200
 accessGranted = False
 startTime = time.time();
 killall = False
@@ -139,7 +139,7 @@ if __name__=='__main__':
 		
 	except KeyboardInterrupt:
 		print 'Received KeyboardInterrupt'
-		#camera.stopRecording()
+		camera.stopRecording()
 		time.sleep(4)
 		killall = True
 		sys.exit()

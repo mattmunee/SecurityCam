@@ -3,12 +3,13 @@ import io
 import threading
 import picamera
 import datetime
+import os
+import datetime
 
 
 class Camera(object):
 	streamThread = None  # background thread that reads frames from camera
 	recordThread = None
-	saveThread = None
 	frame = None  # current frame is stored here by background thread
 	last_access = 0  # time of last client access to the camera
 	camera = None
@@ -16,6 +17,10 @@ class Camera(object):
 	filePort = 2
 	keepRecording = False
 	circStream = None
+	logDirectory = "./ImageLog"
+	frameRateHz = 10;
+	videoLengthSec = 86400;
+	mostNumFrames = 0;
 	
 	def __init__(self):
 		# camera setup
@@ -28,7 +33,7 @@ class Camera(object):
 		Camera.camera.annotate_background = picamera.Color('black')
 		time.sleep(2)
 		Camera.camera.start_preview()
-		Camera.circStream = picamera.PiCameraCircularIO(Camera.camera,size = None, seconds = 10,splitter_port = Camera.filePort)
+		Camera.mostNumFrames = Camera.frameRateHz*Camera.videoLengthSec
 		
 	def get_frame(self):
 		Camera.last_access = time.time()
@@ -68,48 +73,46 @@ class Camera(object):
 
 	def startRecording(self):
 		print 'start recording'
+		if not os.path.exists(self.logDirectory):
+			os.makedirs(self.logDirectory)
+		else:
+			filelist = os.listdir(self.logDirectory)
+			for f in filelist:
+				os.remove(os.path.join(self.logDirectory,f))
 		if Camera.recordThread is None:
 			Camera.keepRecording = True
 			Camera.recordThread = threading.Thread(target = Camera._recordThread)
 			Camera.recordThread.start()	
 		time.sleep(2)
-		if Camera.saveThread is None:
-			Camera.saveThread = threading.Thread(target = Camera._writeThread)
-			Camera.saveThread.start()
 
 	def stopRecording(self):
 		print 'stopRecording'
 		Camera.keepRecording = False
-		
-	@staticmethod
-	def writeVideo(filename):
-		print 'writeVideo'
-		with Camera.circStream.lock:
-			stream = Camera.circStream
-		for frame in stream.frames:
-			if frame.frame_type == picamera.PiVideoFrameType.sps_header:
-				stream.seek(frame.position)
-				break
-		with io.open(filename,'wb') as output:
-			output.write(stream.read())
 	
 	@classmethod
 	def _recordThread(cls):
 		print '_recordThread'
-		cls.camera.start_recording(cls.circStream,format = 'h264', resize = None, splitter_port = cls.filePort)
+		lastFrameTime = time.time();
+		oldestFrameName = None
+		oldestFrameTime = lastFrameTime
+		numFrames = 0
 		while(cls.keepRecording):
-			cls.camera.annotate_text = datetime.datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
-			cls.camera.wait_recording(0.5,splitter_port = cls.filePort)
-			print 'recording'
-		cls.camera.stop_recording(splitter_port = cls.filePort)
-		print 'about to write'
-		cls.writeVideo('StoppedRecording.h264')
-		
-	@classmethod
-	def _writeThread(cls):
-		print '_writeThread'
-		while cls.keepRecording:
-			time.sleep(10)
-			print 'begin write'
-			Camera.writeVideo('CurrentVideo.h264')
-			print 'write end'
+			curTime = time.time()
+			if curTime-lastFrameTime > 1/cls.frameRateHz:
+				dt = datetime.datetime.now();
+				cls.camera.annotate_text = dt.strftime('%Y-%m-%d %I:%M:%S %p')
+				nameString = "still_%02d%02d%02d_%02d-%02d-%02d-%05d.jpg" % (dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second,dt.microsecond)
+				filename = os.path.join(cls.logDirectory,nameString)
+				cls.camera.capture(filename,'jpeg', use_video_port = True,resize = None, splitter_port = cls.filePort)
+				lastFrameTime = time.time()
+				numFrames = numFrames+1;
+				if numFrames>cls.mostNumFrames:
+					filelist = sorted([os.path.join(cls.logDirectory,f) for f in os.listdir(cls.logDirectory)],key = os.path.getctime)
+					os.remove(filelist[0])
+					numFrames = numFrames-1;
+				print filename
+			else:
+				time.sleep(0.005)
+				
+
+
