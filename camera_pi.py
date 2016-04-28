@@ -5,7 +5,7 @@ import picamera
 import datetime
 import os
 import datetime
-
+from collections import deque
 
 class Camera(object):
 	streamThread = None  # background thread that reads frames from camera
@@ -19,7 +19,8 @@ class Camera(object):
 	circStream = None
 	logDirectory = "./ImageLog"
 	frameRateHz = 10;
-	videoLengthSec = 86400;
+	videoLengthSec = 600;
+	totalLogSec = 86400;
 	mostNumFrames = 0;
 	
 	def __init__(self):
@@ -73,12 +74,10 @@ class Camera(object):
 
 	def startRecording(self):
 		print 'start recording'
-		if not os.path.exists(self.logDirectory):
-			os.makedirs(self.logDirectory)
-		else:
-			filelist = os.listdir(self.logDirectory)
-			for f in filelist:
-				os.remove(os.path.join(self.logDirectory,f))
+		dt = datetime.datetime.now()
+		Camera.logDirectory = "./VideoLogs/%02d%02d%02d_%02d-%02d"%(dt.year,dt.month,dt.day,dt.hour,dt.minute)
+		if not os.path.exists(Camera.logDirectory):
+			os.makedirs(Camera.logDirectory)
 		if Camera.recordThread is None:
 			Camera.keepRecording = True
 			Camera.recordThread = threading.Thread(target = Camera._recordThread)
@@ -92,27 +91,42 @@ class Camera(object):
 	@classmethod
 	def _recordThread(cls):
 		print '_recordThread'
-		lastFrameTime = time.time();
-		oldestFrameName = None
-		oldestFrameTime = lastFrameTime
-		numFrames = 0
+		qNames = deque([])
+		qTimes = deque([])		
+		dt = datetime.datetime.now()
+		print "Log Directory is"+cls.logDirectory
+		newVidName = "vid_%04d%02d%02d_%02d-%02d-%02d.h264" % (dt.year, dt.month,dt.day,dt.hour,dt.minute,dt.second)
+		newFilePath = os.path.join(cls.logDirectory,newVidName)
+		print 'Starting First Recording'
+		cls.camera.start_recording(newFilePath,format='h264',resize = None,splitter_port = cls.filePort)
+		lastStartTime = time.time();
+		qNames.append(newFilePath)
+		qTimes.append(lastStartTime)
 		while(cls.keepRecording):
+			dt = datetime.datetime.now()
+			cls.camera.annotate_text = dt.strftime('%Y-%m-%d %I:%M:%S %p')
 			curTime = time.time()
-			if curTime-lastFrameTime > 1/cls.frameRateHz:
-				dt = datetime.datetime.now();
-				cls.camera.annotate_text = dt.strftime('%Y-%m-%d %I:%M:%S %p')
-				nameString = "still_%02d%02d%02d_%02d-%02d-%02d-%05d.jpg" % (dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second,dt.microsecond)
-				filename = os.path.join(cls.logDirectory,nameString)
-				cls.camera.capture(filename,'jpeg', use_video_port = True,resize = None, splitter_port = cls.filePort)
-				lastFrameTime = time.time()
-				numFrames = numFrames+1;
-				if numFrames>cls.mostNumFrames:
-					filelist = sorted([os.path.join(cls.logDirectory,f) for f in os.listdir(cls.logDirectory)],key = os.path.getctime)
-					os.remove(filelist[0])
-					numFrames = numFrames-1;
-				print filename
-			else:
-				time.sleep(0.005)
+			if curTime-lastStartTime > cls.videoLengthSec:
+				print 'Times Up!'
+				if (curTime - qTimes[0])>cls.totalLogSec:
+					print 'Log is Full!'
+					os.remove(qNames[0]);
+					qNames.popleft();
+					qTimes.popleft();
+				newVidName = "vid_%04d%02d%02d_%02d-%02d-%02d.h264" % (dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second)
+				newFilePath = os.path.join(cls.logDirectory,newVidName)
+				print "Creating New Recording at "+newFilePath
+				cls.camera.split_recording(newFilePath,splitter_port = cls.filePort)
+				#cls.camera.stop_recording(cls.filePort)
+				#cls.camera.start_recording(newFilePath,format='h264',resize=None,splitter_port = cls.filePort)
+				qNames.append(newFilePath)
+				qTimes.append(curTime)
+				lastStartTime = time.time()
+			cls.camera.wait_recording(timeout = 0.1,splitter_port = cls.filePort);
+		cls.camera.stop_recording(cls.filePort)
+				
+				
+			
 				
 
 
