@@ -22,6 +22,7 @@ class Camera(object):
 	videoLengthSec = 600;
 	totalLogSec = 86400;
 	mostNumFrames = 0;
+	lock=threading.Lock()
 	
 	def __init__(self):
 		# camera setup
@@ -54,6 +55,7 @@ class Camera(object):
 		cls.camera.start_preview()
 		time.sleep(2)
 		networkStream = io.BytesIO()
+		lastCall = time.time()
 		for foo in cls.camera.capture_continuous(networkStream, 'jpeg',use_video_port=True,resize=None,splitter_port=cls.streamPort):
 			# store frame
 			networkStream.seek(0)
@@ -68,26 +70,44 @@ class Camera(object):
 			# the last 10 seconds stop the thread
 			if time.time() - cls.last_access > 10:
 				break
-			
 		cls.streamThread = None
 
 
 	def startRecording(self):
 		print 'start recording'
 		dt = datetime.datetime.now()
-		Camera.logDirectory = "./VideoLogs/%02d%02d%02d_%02d-%02d"%(dt.year,dt.month,dt.day,dt.hour,dt.minute)
+		Camera.logDirectory = "./VideoLogs/%02d%02d%02d_%02d-%02d-%02d"%(dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second)
 		if not os.path.exists(Camera.logDirectory):
 			os.makedirs(Camera.logDirectory)
+		Camera.keepRecording = True
 		if Camera.recordThread is None:
-			Camera.keepRecording = True
+			print 'Record Thread None'
 			Camera.recordThread = threading.Thread(target = Camera._recordThread)
 			Camera.recordThread.start()	
+		else:
+			try:
+				if not Camera.recordThread.isAlive():
+					print 'Record Thread Already Exists'
+					Camera.recordThread=None
+					self.startRecording()
+			except:
+				pass
 		time.sleep(2)
 
 	def stopRecording(self):
 		print 'stopRecording'
 		Camera.keepRecording = False
-	
+
+
+	def archiveVideoLog(self):
+		print 'archiving log'
+		Camera.keepRecording = False
+		while Camera.recordThread.isAlive():
+			print 'Camera still alive'
+			time.sleep(0.2)
+		print 'Restarting Log'
+		self.startRecording()
+
 	@classmethod
 	def _recordThread(cls):
 		print '_recordThread'
@@ -103,6 +123,7 @@ class Camera(object):
 		qNames.append(newFilePath)
 		qTimes.append(lastStartTime)
 		while(cls.keepRecording):
+			print 'Record Thread: keepRecording=',cls.keepRecording
 			dt = datetime.datetime.now()
 			cls.camera.annotate_text = dt.strftime('%Y-%m-%d %I:%M:%S %p')
 			curTime = time.time()
@@ -117,16 +138,10 @@ class Camera(object):
 				newFilePath = os.path.join(cls.logDirectory,newVidName)
 				print "Creating New Recording at "+newFilePath
 				cls.camera.split_recording(newFilePath,splitter_port = cls.filePort)
-				#cls.camera.stop_recording(cls.filePort)
-				#cls.camera.start_recording(newFilePath,format='h264',resize=None,splitter_port = cls.filePort)
 				qNames.append(newFilePath)
 				qTimes.append(curTime)
 				lastStartTime = time.time()
 			cls.camera.wait_recording(timeout = 0.1,splitter_port = cls.filePort);
-		cls.camera.stop_recording(cls.filePort)
-				
-				
-			
-				
+		Camera.camera.stop_recording(Camera.filePort)
 
 

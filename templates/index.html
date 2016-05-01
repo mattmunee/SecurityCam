@@ -1,9 +1,29 @@
 <html>
-  <head>
-    <title>Live Video Feed</title>
-  </head>
-  <body>
-    <h1>Live Video Feed</h1>
-    <img src="{{ url_for('video_feed') }}">
-  </body>
+	<head>
+		<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+		<script>
+		   $(document).ready(function(){
+
+				$('#btnSend').click(function(){
+
+					$.ajax({
+					  type: 'POST',
+					  url: '/archive',
+					  success: function(data){
+						alert(data);
+					  }
+					});
+				});
+
+		   });
+		</script>
+		<title>Live Video Feed</title>
+    </head>
+	<h1>Live Video Feed</h1>
+	<div>
+		<input type="button" id="btnSend" value="Archive Video Log">
+	</div>
+	<div>
+		<img src="{{ url_for('video_feed') }}">
+	</div>
 </html>

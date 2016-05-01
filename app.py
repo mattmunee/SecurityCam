@@ -49,8 +49,6 @@ def cleanupApp():
 	print "Should be dead"
 	camera.stopRecording()
 	print 'Finished!'
-	#server.terminate()
-	#server.join()
 	time.sleep(1)
 
 
@@ -88,9 +86,21 @@ def feed():
 	else:
 		return redirect(url_for('login'))
 
+@app.route('/archive', methods=['POST'])
+def archive():
+	print 'archive'
+	global camera
+	camera.archiveVideoLog()
+	print 'video archived'
+	if request.method == 'POST':
+		return "VIDEO ARCHIVED"
+	else:
+		return "ERROR ARCHIVING VIDEO"
+
 
 def gen(camera_inst):
     """Video streaming generator function."""
+    print 'gen'
     while True:
         frame = camera_inst.get_frame()
         yield (b'--frame\r\n'
@@ -127,7 +137,7 @@ if __name__=='__main__':
 		camera.startRecording()
 		
 		print 'About to run'
-		app.run(host = '0.0.0.0',use_reloader = False, debug = False)
+		app.run(host = '0.0.0.0',threaded=True, use_reloader = False, debug = False)
 		#server = Process(target=run_server)
 		#server.start()
 		
