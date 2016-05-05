@@ -36,6 +36,14 @@ class Camera(object):
 		time.sleep(2)
 		Camera.camera.start_preview()
 		Camera.mostNumFrames = Camera.frameRateHz*Camera.videoLengthSec
+		print 'Camera Settings:'
+		print 'ISO: ', Camera.camera.iso
+		print 'awb_mode: ', Camera.camera.awb_mode
+		print 'brightness: ', Camera.camera.brightness
+		print 'exp_comp: ', Camera.camera.exposure_compensation
+		print 'exp_mode: ', Camera.camera.exposure_mode
+		print 'image_denoise: ', Camera.camera.image_denoise
+		print 'video_denoise: ', Camera.camera.video_denoise
 		
 	def get_frame(self):
 		Camera.last_access = time.time()
@@ -77,6 +85,7 @@ class Camera(object):
 		print 'start recording'
 		dt = datetime.datetime.now()
 		Camera.logDirectory = "./VideoLogs/%02d%02d%02d_%02d-%02d-%02d"%(dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second)
+		print 'Log Path: ',os.path.abspath(Camera.logDirectory)
 		if not os.path.exists(Camera.logDirectory):
 			os.makedirs(Camera.logDirectory)
 		Camera.keepRecording = True
@@ -114,7 +123,7 @@ class Camera(object):
 		qNames = deque([])
 		qTimes = deque([])		
 		dt = datetime.datetime.now()
-		print "Log Directory is"+cls.logDirectory
+		print "Log Directory is"+os.path.abspath(cls.logDirectory)
 		newVidName = "vid_%04d%02d%02d_%02d-%02d-%02d.h264" % (dt.year, dt.month,dt.day,dt.hour,dt.minute,dt.second)
 		newFilePath = os.path.join(cls.logDirectory,newVidName)
 		print 'Starting First Recording'
